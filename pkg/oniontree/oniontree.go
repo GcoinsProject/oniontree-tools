@@ -99,7 +99,11 @@ func (o OnionTree) Tag(id string, tags []string) error {
 				return err
 			}
 		}
-		if err := os.Symlink(pth, path.Join(pthTag, path.Base(pth))); err != nil {
+		pthRel, err := filepath.Rel(pthTag, pth)
+		if err != nil {
+			return err
+		}
+		if err := os.Symlink(pthRel, path.Join(pthTag, path.Base(pth))); err != nil {
 			if !os.IsExist(err) {
 				return err
 			}
