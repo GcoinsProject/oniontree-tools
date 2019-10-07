@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -88,6 +89,7 @@ func (o OnionTree) Tag(id string, tags []string) error {
 		return err
 	}
 	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
 		pth := path.Join(unsorted, id+entryExt)
 		if !isFile(pth) {
 			return ErrIdNotExists
