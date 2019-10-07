@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/onionltd/oniontree-tools/pkg/oniontree"
 	"os"
+	"strings"
 )
 
 func exitError(msg string) {
@@ -14,13 +15,13 @@ func exitError(msg string) {
 
 func main() {
 	id := flag.String("id", "", "Onion service ID.")
-	tag := flag.String("tag", "", "Tag name.")
+	tags := flag.String("tags", "", "Onion service tags.")
 	flag.Parse()
 
 	if *id == "" {
 		exitError("id not specified")
 	}
-	if *tag == "" {
+	if *tags == "" {
 		exitError("tag not specified")
 	}
 
@@ -30,7 +31,8 @@ func main() {
 	}
 
 	onionTree := oniontree.New(wd)
-	if err := onionTree.Tag(*id, []string{*tag}); err != nil {
+
+	if err := onionTree.Tag(*id, strings.Split(*tags, ",")); err != nil {
 		if err == oniontree.ErrIdNotExists {
 			exitError(err.Error())
 		}
