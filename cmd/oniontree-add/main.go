@@ -19,18 +19,15 @@ func main() {
 	id := flag.String("id", "", "Onion service ID.")
 	name := flag.String("name", "", "Onion service name.")
 	description := flag.String("description", "", "Onion service description.")
-	urls := flag.String("url", "", "Onion service URL")
+	urls := flag.String("url", "", "Onion service URL.")
 	tags := flag.String("tags", "", "Onion service tags.")
-	pubkey := flag.String("pubkey", "", "Admin's PGP key.")
 	flag.Parse()
 
 	s := service.Service{}
 	s.Name = *name
 	s.Description = *description
-	s.PublicKey = *pubkey
-	s.URLs = []string{}
 	if *urls != "" {
-		s.URLs = append(s.URLs, *urls)
+		s.SetURLs(*urls)
 	}
 
 	if *id == "" {
