@@ -18,17 +18,14 @@ func main() {
 	id := flag.String("id", "", "Onion service ID.")
 	name := flag.String("name", "", "Onion service name.")
 	description := flag.String("description", "", "Onion service description.")
-	urls := flag.String("url", "", "Onion service URL")
-	pubkey := flag.String("pubkey", "", "Admin's PGP key.")
+	urls := flag.String("url", "", "Onion service URL.")
 	flag.Parse()
 
 	sNew := service.Service{}
 	sNew.Name = *name
 	sNew.Description = *description
-	sNew.PublicKey = *pubkey
-	sNew.URLs = []string{}
 	if *urls != "" {
-		sNew.URLs = append(sNew.URLs, *urls)
+		sNew.AddURLs(*urls)
 	}
 
 	if *id == "" {
@@ -42,7 +39,6 @@ func main() {
 
 	onionTree := oniontree.New(wd)
 	b, err := onionTree.Get(*id)
-
 	if err != nil {
 		if err == oniontree.ErrIdNotExists {
 			exitError(err.Error())
@@ -60,9 +56,6 @@ func main() {
 	}
 	if sNew.Description == "" {
 		sNew.Description = sOld.Description
-	}
-	if sNew.PublicKey == "" {
-		sNew.PublicKey = sOld.PublicKey
 	}
 	if len(sNew.URLs) == 0 {
 		sNew.URLs = sOld.URLs
