@@ -143,6 +143,26 @@ func (o OnionTree) Get(id string) ([]byte, error) {
 	return data, nil
 }
 
+func (o OnionTree) List() ([]string, error) {
+	unsorted, err := o.getUnsortedDir()
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.Open(unsorted)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	files, err := file.Readdirnames(0)
+	if err != nil {
+		return nil, err
+	}
+	for idx, _ := range files {
+		files[idx] = strings.TrimSuffix(files[idx], filepath.Ext(files[idx]))
+	}
+	return files, nil
+}
+
 func (o OnionTree) getUnsortedDir() (string, error) {
 	root, err := findRootDir(o.dir)
 	if err != nil {
