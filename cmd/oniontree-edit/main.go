@@ -60,6 +60,7 @@ func main() {
 	if len(sNew.URLs) == 0 {
 		sNew.URLs = sOld.URLs
 	}
+	sNew.PublicKeys = sOld.PublicKeys
 
 	b, err = yaml.Marshal(sNew)
 	if err != nil {
