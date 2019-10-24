@@ -21,13 +21,6 @@ func main() {
 	urls := flag.String("url", "", "Onion service URL.")
 	flag.Parse()
 
-	sNew := service.Service{}
-	sNew.Name = *name
-	sNew.Description = *description
-	if *urls != "" {
-		sNew.AddURLs(*urls)
-	}
-
 	if *id == "" {
 		exitError("id not specified")
 	}
@@ -46,23 +39,22 @@ func main() {
 		panic(err)
 	}
 
-	sOld := service.Service{}
-	if err := yaml.Unmarshal(b, &sOld); err != nil {
+	s := service.Service{}
+	if err := yaml.Unmarshal(b, &s); err != nil {
 		panic(err)
 	}
 
-	if sNew.Name == "" {
-		sNew.Name = sOld.Name
+	if *name != "" {
+		s.Name = *name
 	}
-	if sNew.Description == "" {
-		sNew.Description = sOld.Description
+	if *description != "" {
+		s.Description = *description
 	}
-	if len(sNew.URLs) == 0 {
-		sNew.URLs = sOld.URLs
+	if *urls != "" {
+		s.AddURLs(*urls)
 	}
-	sNew.PublicKeys = sOld.PublicKeys
 
-	b, err = yaml.Marshal(sNew)
+	b, err = yaml.Marshal(s)
 	if err != nil {
 		panic(err)
 	}
