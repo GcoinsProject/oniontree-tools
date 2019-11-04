@@ -19,20 +19,21 @@ func main() {
 	id := flag.String("id", "", "Onion service ID.")
 	name := flag.String("name", "", "Onion service name.")
 	description := flag.String("description", "", "Onion service description.")
-	urls := flag.String("url", "", "Onion service URL.")
+	urls := flag.String("urls", "", "Onion service URL.")
 	tags := flag.String("tags", "", "Onion service tags.")
 	flag.Parse()
-
-	s := service.Service{}
-	s.Name = *name
-	s.Description = *description
-	if *urls != "" {
-		s.SetURLs(*urls)
-	}
 
 	if *id == "" {
 		exitError("id not specified")
 	}
+	if *urls == "" {
+		exitError("url not specified")
+	}
+
+	s := service.Service{}
+	s.Name = *name
+	s.Description = *description
+	s.SetURLs(strings.Split(*urls, ",")...)
 
 	b, err := yaml.Marshal(s)
 	if err != nil {
