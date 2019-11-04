@@ -1,5 +1,7 @@
 package service
 
+import "strings"
+
 type Service struct {
 	Name        string      `json:"name" yaml:"name"`
 	Description string      `json:"description,omitempty" yaml:"description,omitempty"`
@@ -14,6 +16,7 @@ func (s *Service) SetURLs(urls ...string) {
 
 func (s *Service) AddURLs(urls ...string) {
 	for _, url := range urls {
+		url = strings.TrimSpace(url)
 		_, exists := s.urlExists(url)
 		if exists {
 			continue
