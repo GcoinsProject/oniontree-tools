@@ -7,6 +7,7 @@ import (
 	"github.com/onionltd/oniontree-tools/pkg/oniontree"
 	"github.com/onionltd/oniontree-tools/pkg/types/service"
 	"os"
+	"strings"
 )
 
 func exitError(msg string) {
@@ -18,7 +19,8 @@ func main() {
 	id := flag.String("id", "", "Onion service ID.")
 	name := flag.String("name", "", "Onion service name.")
 	description := flag.String("description", "", "Onion service description.")
-	urls := flag.String("url", "", "Onion service URL.")
+	urls := flag.String("urls", "", "Onion service URL.")
+	replace := flag.Bool("replace", false, "Replace URLs instead of adding them.")
 	flag.Parse()
 
 	if *id == "" {
@@ -51,7 +53,11 @@ func main() {
 		s.Description = *description
 	}
 	if *urls != "" {
-		s.AddURLs(*urls)
+		if *replace {
+			s.SetURLs(strings.Split(*urls, ",")...)
+		} else {
+			s.AddURLs(strings.Split(*urls, ",")...)
+		}
 	}
 
 	b, err = yaml.Marshal(s)
