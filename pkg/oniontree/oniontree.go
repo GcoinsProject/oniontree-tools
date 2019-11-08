@@ -2,6 +2,9 @@ package oniontree
 
 import (
 	"errors"
+	"fmt"
+	"github.com/go-yaml/yaml"
+	"github.com/onionltd/oniontree-tools/pkg/types/service"
 	"io"
 	"os"
 	"path"
@@ -11,7 +14,6 @@ import (
 
 const (
 	cairnName string = ".oniontree"
-	entryExt  string = ".yaml"
 )
 
 var (
@@ -21,7 +23,8 @@ var (
 )
 
 type OnionTree struct {
-	dir string
+	dir    string
+	format string
 }
 
 func (o OnionTree) Init() error {
@@ -41,16 +44,20 @@ func (o OnionTree) Init() error {
 	return cairnFile.Close()
 }
 
-func (o OnionTree) Add(id string, data []byte) error {
+func (o OnionTree) Add(id string, s service.Service) error {
 	unsorted, err := o.getUnsortedDir()
 	if err != nil {
 		return err
 	}
-	pth := path.Join(unsorted, id+entryExt)
+	pth := path.Join(unsorted, o.idToFilename(id))
 	if isFile(pth) {
 		return ErrIdExists
 	}
 	file, err := os.Create(pth)
+	if err != nil {
+		return err
+	}
+	data, err := o.marshalData(s)
 	if err != nil {
 		return err
 	}
@@ -60,16 +67,20 @@ func (o OnionTree) Add(id string, data []byte) error {
 	return file.Close()
 }
 
-func (o OnionTree) Edit(id string, data []byte) error {
+func (o OnionTree) Edit(id string, s service.Service) error {
 	unsorted, err := o.getUnsortedDir()
 	if err != nil {
 		return err
 	}
-	pth := path.Join(unsorted, id+entryExt)
+	pth := path.Join(unsorted, o.idToFilename(id))
 	if !isFile(pth) {
 		return ErrIdNotExists
 	}
 	file, err := os.Create(pth)
+	if err != nil {
+		return err
+	}
+	data, err := o.marshalData(s)
 	if err != nil {
 		return err
 	}
@@ -90,7 +101,7 @@ func (o OnionTree) Tag(id string, tags []string) error {
 	}
 	for _, tag := range tags {
 		tag = strings.TrimSpace(tag)
-		pth := path.Join(unsorted, id+entryExt)
+		pth := path.Join(unsorted, o.idToFilename(id))
 		if !isFile(pth) {
 			return ErrIdNotExists
 		}
@@ -114,18 +125,18 @@ func (o OnionTree) Tag(id string, tags []string) error {
 	return nil
 }
 
-func (o OnionTree) Get(id string) ([]byte, error) {
+func (o OnionTree) Get(id string) (service.Service, error) {
 	unsorted, err := o.getUnsortedDir()
 	if err != nil {
-		return nil, err
+		return service.Service{}, err
 	}
-	pth := path.Join(unsorted, id+entryExt)
+	pth := path.Join(unsorted, o.idToFilename(id))
 	if !isFile(pth) {
-		return nil, ErrIdNotExists
+		return service.Service{}, ErrIdNotExists
 	}
 	file, err := os.Open(pth)
 	if err != nil {
-		return nil, err
+		return service.Service{}, err
 	}
 	defer file.Close()
 	data := []byte{}
@@ -134,13 +145,17 @@ func (o OnionTree) Get(id string) ([]byte, error) {
 		num, err := file.Read(buff)
 		if err != nil {
 			if err != io.EOF {
-				return nil, err
+				return service.Service{}, err
 			}
 			break
 		}
 		data = append(data, buff[:num]...)
 	}
-	return data, nil
+	s := service.Service{}
+	if err := o.unmarshalData(data, &s); err != nil {
+		return service.Service{}, err
+	}
+	return s, nil
 }
 
 func (o OnionTree) List() ([]string, error) {
@@ -158,7 +173,7 @@ func (o OnionTree) List() ([]string, error) {
 		return nil, err
 	}
 	for idx, _ := range files {
-		files[idx] = strings.TrimSuffix(files[idx], filepath.Ext(files[idx]))
+		files[idx] = o.filenameToId(files[idx])
 	}
 	return files, nil
 }
@@ -196,6 +211,34 @@ func (o OnionTree) getTaggedDir() (string, error) {
 	return path.Join(root, "tagged"), nil
 }
 
+func (o OnionTree) marshalData(data interface{}) (b []byte, err error) {
+	switch o.format {
+	case "yaml":
+		b, err = yaml.Marshal(data)
+	default:
+		panic("unsupported format")
+	}
+	return
+}
+
+func (o OnionTree) unmarshalData(b []byte, data interface{}) (err error) {
+	switch o.format {
+	case "yaml":
+		err = yaml.Unmarshal(b, data)
+	default:
+		panic("unsupported format")
+	}
+	return
+}
+
+func (o OnionTree) idToFilename(id string) string {
+	return fmt.Sprintf("%s.%s", id, o.format)
+}
+
+func (o OnionTree) filenameToId(filename string) string {
+	return strings.TrimSuffix(filename, filepath.Ext(filename))
+}
+
 func findRootDir(dir string) (string, error) {
 	for {
 		pth := path.Join(dir, cairnName)
@@ -215,5 +258,5 @@ func findRootDir(dir string) (string, error) {
 }
 
 func New(dir string) *OnionTree {
-	return &OnionTree{dir: dir}
+	return &OnionTree{dir: dir, format: "yaml"}
 }
