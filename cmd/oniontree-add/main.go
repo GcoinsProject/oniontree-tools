@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-yaml/yaml"
 	"github.com/onionltd/oniontree-tools/pkg/oniontree"
 	"github.com/onionltd/oniontree-tools/pkg/types/service"
 	"os"
@@ -35,19 +34,17 @@ func main() {
 	s.Description = *description
 	s.SetURLs(strings.Split(*urls, ",")...)
 
-	b, err := yaml.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 
-	onionTree := oniontree.New(wd)
+	onionTree, err := oniontree.Open(wd)
+	if err != nil {
+		panic(err)
+	}
 
-	if err := onionTree.Add(*id, b); err != nil {
+	if err := onionTree.Add(*id, s); err != nil {
 		if err == oniontree.ErrIdExists {
 			exitError(err.Error())
 		}
