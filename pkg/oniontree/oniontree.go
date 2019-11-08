@@ -126,17 +126,29 @@ func (o OnionTree) Tag(id string, tags []string) error {
 }
 
 func (o OnionTree) Get(id string) (service.Service, error) {
-	unsorted, err := o.getUnsortedDir()
+	data, err := o.GetRaw(id)
 	if err != nil {
 		return service.Service{}, err
+	}
+	s := service.Service{}
+	if err := o.unmarshalData(data, &s); err != nil {
+		return service.Service{}, err
+	}
+	return s, nil
+}
+
+func (o OnionTree) GetRaw(id string) ([]byte, error) {
+	unsorted, err := o.getUnsortedDir()
+	if err != nil {
+		return nil, err
 	}
 	pth := path.Join(unsorted, o.idToFilename(id))
 	if !isFile(pth) {
-		return service.Service{}, ErrIdNotExists
+		return nil, ErrIdNotExists
 	}
 	file, err := os.Open(pth)
 	if err != nil {
-		return service.Service{}, err
+		return nil, err
 	}
 	defer file.Close()
 	data := []byte{}
@@ -145,17 +157,13 @@ func (o OnionTree) Get(id string) (service.Service, error) {
 		num, err := file.Read(buff)
 		if err != nil {
 			if err != io.EOF {
-				return service.Service{}, err
+				return nil, err
 			}
 			break
 		}
 		data = append(data, buff[:num]...)
 	}
-	s := service.Service{}
-	if err := o.unmarshalData(data, &s); err != nil {
-		return service.Service{}, err
-	}
-	return s, nil
+	return data, nil
 }
 
 func (o OnionTree) List() ([]string, error) {
