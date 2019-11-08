@@ -163,6 +163,23 @@ func (o OnionTree) List() ([]string, error) {
 	return files, nil
 }
 
+func (o OnionTree) ListTags() ([]string, error) {
+	tagged, err := o.getTaggedDir()
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.Open(tagged)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	files, err := file.Readdirnames(0)
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
 func (o OnionTree) getUnsortedDir() (string, error) {
 	root, err := findRootDir(o.dir)
 	if err != nil {
