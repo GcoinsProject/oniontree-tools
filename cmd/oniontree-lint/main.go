@@ -30,7 +30,10 @@ func main() {
 		panic(err)
 	}
 
-	onionTree := oniontree.New(wd)
+	onionTree, err := oniontree.Open(wd)
+	if err != nil {
+		panic(err)
+	}
 
 	ids := []string{}
 	if *id == "" {
@@ -45,7 +48,7 @@ func main() {
 
 	exitnum := 0
 	for _, id := range ids {
-		b, err := onionTree.Get(id)
+		b, err := onionTree.GetRaw(id)
 		if err != nil {
 			panic(err)
 		}
