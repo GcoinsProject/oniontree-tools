@@ -18,6 +18,7 @@ func main() {
 	id := flag.String("id", "", "Onion service ID.")
 	description := flag.String("description", "", "Public key description.")
 	file := flag.String("file", "", "Public key file.")
+	replace := flag.Bool("replace", false, "Replace existing public keys.")
 	flag.Parse()
 
 	if *id == "" {
@@ -56,7 +57,11 @@ func main() {
 	}
 	k.Description = *description
 
-	s.AddPublicKeys(k)
+	if *replace {
+		s.SetPublicKeys(k)
+	} else {
+		s.AddPublicKeys(k)
+	}
 
 	if err := onionTree.Edit(*id, s); err != nil {
 		panic(err)
