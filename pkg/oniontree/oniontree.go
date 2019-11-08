@@ -28,11 +28,8 @@ type OnionTree struct {
 }
 
 func (o OnionTree) Init() error {
-	for _, subdir := range []string{".", "unsorted", "tagged"} {
-		if err := os.Mkdir(path.Join(o.dir, subdir), 0755); err != nil {
-			if os.IsExist(err) {
-				continue
-			}
+	for _, dir := range []string{o.getTaggedDir(), o.getUnsortedDir()} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			return err
 		}
 	}
@@ -45,11 +42,7 @@ func (o OnionTree) Init() error {
 }
 
 func (o OnionTree) Add(id string, s service.Service) error {
-	unsorted, err := o.getUnsortedDir()
-	if err != nil {
-		return err
-	}
-	pth := path.Join(unsorted, o.idToFilename(id))
+	pth := path.Join(o.getUnsortedDir(), o.idToFilename(id))
 	if isFile(pth) {
 		return ErrIdExists
 	}
@@ -68,11 +61,7 @@ func (o OnionTree) Add(id string, s service.Service) error {
 }
 
 func (o OnionTree) Edit(id string, s service.Service) error {
-	unsorted, err := o.getUnsortedDir()
-	if err != nil {
-		return err
-	}
-	pth := path.Join(unsorted, o.idToFilename(id))
+	pth := path.Join(o.getUnsortedDir(), o.idToFilename(id))
 	if !isFile(pth) {
 		return ErrIdNotExists
 	}
@@ -91,21 +80,13 @@ func (o OnionTree) Edit(id string, s service.Service) error {
 }
 
 func (o OnionTree) Tag(id string, tags []string) error {
-	unsorted, err := o.getUnsortedDir()
-	if err != nil {
-		return err
-	}
-	tagged, err := o.getTaggedDir()
-	if err != nil {
-		return err
-	}
 	for _, tag := range tags {
 		tag = strings.TrimSpace(tag)
-		pth := path.Join(unsorted, o.idToFilename(id))
+		pth := path.Join(o.getUnsortedDir(), o.idToFilename(id))
 		if !isFile(pth) {
 			return ErrIdNotExists
 		}
-		pthTag := path.Join(tagged, tag)
+		pthTag := path.Join(o.getTaggedDir(), tag)
 		// Create tag directory, ignore error if it already exists.
 		if err := os.Mkdir(pthTag, 0755); err != nil {
 			if !os.IsExist(err) {
@@ -138,11 +119,7 @@ func (o OnionTree) Get(id string) (service.Service, error) {
 }
 
 func (o OnionTree) GetRaw(id string) ([]byte, error) {
-	unsorted, err := o.getUnsortedDir()
-	if err != nil {
-		return nil, err
-	}
-	pth := path.Join(unsorted, o.idToFilename(id))
+	pth := path.Join(o.getUnsortedDir(), o.idToFilename(id))
 	if !isFile(pth) {
 		return nil, ErrIdNotExists
 	}
@@ -167,11 +144,7 @@ func (o OnionTree) GetRaw(id string) ([]byte, error) {
 }
 
 func (o OnionTree) List() ([]string, error) {
-	unsorted, err := o.getUnsortedDir()
-	if err != nil {
-		return nil, err
-	}
-	file, err := os.Open(unsorted)
+	file, err := os.Open(o.getUnsortedDir())
 	if err != nil {
 		return nil, err
 	}
@@ -187,11 +160,7 @@ func (o OnionTree) List() ([]string, error) {
 }
 
 func (o OnionTree) ListTags() ([]string, error) {
-	tagged, err := o.getTaggedDir()
-	if err != nil {
-		return nil, err
-	}
-	file, err := os.Open(tagged)
+	file, err := os.Open(o.getTaggedDir())
 	if err != nil {
 		return nil, err
 	}
@@ -203,20 +172,12 @@ func (o OnionTree) ListTags() ([]string, error) {
 	return files, nil
 }
 
-func (o OnionTree) getUnsortedDir() (string, error) {
-	root, err := findRootDir(o.dir)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(root, "unsorted"), nil
+func (o OnionTree) getUnsortedDir() string {
+	return path.Join(o.dir, "unsorted")
 }
 
-func (o OnionTree) getTaggedDir() (string, error) {
-	root, err := findRootDir(o.dir)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(root, "tagged"), nil
+func (o OnionTree) getTaggedDir() string {
+	return path.Join(o.dir, "tagged")
 }
 
 func (o OnionTree) marshalData(data interface{}) (b []byte, err error) {
@@ -247,7 +208,11 @@ func (o OnionTree) filenameToId(filename string) string {
 	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
 
-func findRootDir(dir string) (string, error) {
+func (o OnionTree) findRootDir(dir string) (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
 	for {
 		pth := path.Join(dir, cairnName)
 		match, err := filepath.Glob(pth)
@@ -255,7 +220,11 @@ func findRootDir(dir string) (string, error) {
 			return "", err
 		}
 		if len(match) > 0 {
-			return path.Dir(pth), nil
+			relpth, err := filepath.Rel(cwd, path.Dir(pth))
+			if err != nil {
+				return "", err
+			}
+			return relpth, nil
 		}
 		if dir == "/" {
 			break
@@ -266,5 +235,18 @@ func findRootDir(dir string) (string, error) {
 }
 
 func New(dir string) *OnionTree {
-	return &OnionTree{dir: dir, format: "yaml"}
+	return &OnionTree{
+		dir:    dir,
+		format: "yaml",
+	}
+}
+
+func Open(dir string) (*OnionTree, error) {
+	o := &OnionTree{format: "yaml"}
+	root, err := o.findRootDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	o.dir = root
+	return o, nil
 }
