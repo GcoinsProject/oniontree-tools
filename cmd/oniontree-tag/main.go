@@ -30,7 +30,10 @@ func main() {
 		panic(err)
 	}
 
-	onionTree := oniontree.New(wd)
+	onionTree, err := oniontree.Open(wd)
+	if err != nil {
+		panic(err)
+	}
 
 	if err := onionTree.Tag(*id, strings.Split(*tags, ",")); err != nil {
 		if err == oniontree.ErrIdNotExists {
