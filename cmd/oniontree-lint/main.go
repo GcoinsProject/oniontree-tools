@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/onionltd/oniontree-tools/pkg/oniontree"
 	"github.com/onionltd/oniontree-tools/pkg/types/service"
+	"github.com/xeipuuv/gojsonschema"
 	"os"
 )
 
@@ -20,6 +23,8 @@ func printLintStatus(file string, err error) {
 	}
 	fmt.Printf("%s: %s\n", file, err)
 }
+
+//go:generate go run generate.go
 
 func main() {
 	id := flag.String("id", "", "Onion service ID.")
@@ -53,13 +58,33 @@ func main() {
 			panic(err)
 		}
 
+		// Validate YAML syntactically
 		s := &service.Service{}
 		if err := yaml.Unmarshal(b, &s); err != nil {
 			exitnum = 1
 			printLintStatus(id, err)
 			continue
 		}
-		// TODO: validate yaml schema!
+
+		// Convert service data to JSON so it can be validated by jsonschema
+		b, err = json.Marshal(s)
+		if err != nil {
+			panic(err)
+		}
+
+		schemaLoader := gojsonschema.NewStringLoader(ServiceSchema)
+		documentLoader := gojsonschema.NewBytesLoader(b)
+		res, err := gojsonschema.Validate(schemaLoader, documentLoader)
+		if err != nil {
+			panic(err)
+		}
+
+		if !res.Valid() {
+			for _, errMsg := range res.Errors() {
+				printLintStatus(id, errors.New(errMsg.String()))
+			}
+			continue
+		}
 	}
 	os.Exit(exitnum)
 }
