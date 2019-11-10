@@ -145,8 +145,12 @@ func (o OnionTree) GetRaw(id string) ([]byte, error) {
 }
 
 func (o OnionTree) GetTag(id string) (tag.Tag, error) {
+	pth := path.Join(o.getTaggedDir(), id)
+	if !isDir(pth) {
+		return tag.Tag{}, ErrIdNotExists
+	}
 	t := tag.Tag{ID: id}
-	file, err := os.Open(o.getTaggedDir())
+	file, err := os.Open(pth)
 	if err != nil {
 		return tag.Tag{}, err
 	}
