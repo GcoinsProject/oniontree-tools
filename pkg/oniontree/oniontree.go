@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/onionltd/oniontree-tools/pkg/types/service"
+	"github.com/onionltd/oniontree-tools/pkg/types/tag"
 	"io"
 	"os"
 	"path"
@@ -141,6 +142,23 @@ func (o OnionTree) GetRaw(id string) ([]byte, error) {
 		data = append(data, buff[:num]...)
 	}
 	return data, nil
+}
+
+func (o OnionTree) GetTag(id string) (tag.Tag, error) {
+	t := tag.Tag{ID: id}
+	file, err := os.Open(o.getTaggedDir())
+	if err != nil {
+		return tag.Tag{}, err
+	}
+	defer file.Close()
+	t.Services, err = file.Readdirnames(0)
+	if err != nil {
+		return tag.Tag{}, err
+	}
+	for idx, _ := range t.Services {
+		t.Services[idx] = o.filenameToId(t.Services[idx])
+	}
+	return t, nil
 }
 
 func (o OnionTree) List() ([]string, error) {
