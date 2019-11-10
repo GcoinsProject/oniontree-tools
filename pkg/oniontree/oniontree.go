@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -178,6 +179,7 @@ func (o OnionTree) List() ([]string, error) {
 	for idx, _ := range files {
 		files[idx] = o.filenameToId(files[idx])
 	}
+	sort.Strings(files)
 	return files, nil
 }
 
@@ -191,6 +193,7 @@ func (o OnionTree) ListTags() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Strings(files)
 	return files, nil
 }
 
