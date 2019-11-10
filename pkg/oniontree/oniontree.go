@@ -163,6 +163,7 @@ func (o OnionTree) GetTag(id string) (tag.Tag, error) {
 	for idx, _ := range t.Services {
 		t.Services[idx] = o.filenameToId(t.Services[idx])
 	}
+	sort.Strings(t.Services)
 	return t, nil
 }
 
