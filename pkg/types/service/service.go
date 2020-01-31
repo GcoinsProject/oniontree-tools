@@ -3,6 +3,7 @@ package service
 import "strings"
 
 type Service struct {
+	ID          string      `json:"-" yaml:"-"`
 	Name        string      `json:"name" yaml:"name"`
 	Description string      `json:"description,omitempty" yaml:"description,omitempty"`
 	URLs        []string    `json:"urls" yaml:"urls"`

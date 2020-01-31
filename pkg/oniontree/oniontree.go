@@ -113,7 +113,7 @@ func (o OnionTree) Get(id string) (service.Service, error) {
 	if err != nil {
 		return service.Service{}, err
 	}
-	s := service.Service{}
+	s := service.Service{ID: id}
 	if err := o.unmarshalData(data, &s); err != nil {
 		return service.Service{}, err
 	}
