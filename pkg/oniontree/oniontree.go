@@ -1,6 +1,7 @@
 package oniontree
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"github.com/go-yaml/yaml"
@@ -196,6 +197,28 @@ func (o OnionTree) ListTags() ([]string, error) {
 	}
 	sort.Strings(files)
 	return files, nil
+}
+
+// Hash calculates sha256 sum of OnionTree content.
+// Services are read in alphabetical order and hash of their content is appended to a buffer.
+// Resulting hash is sha256 sum of all hashes.
+func (o OnionTree) Hash() ([32]byte, error) {
+	services, err := o.List()
+	if err != nil {
+		return [32]byte{}, err
+	}
+	payload := make([]byte, len(services)*sha256.Size)
+	for idx := range services {
+		b, err := o.GetRaw(services[idx])
+		if err != nil {
+			return [32]byte{}, err
+		}
+		hash := sha256.Sum256(b)
+		for i := range hash {
+			payload[(idx*sha256.Size)+i] = hash[i]
+		}
+	}
+	return sha256.Sum256(payload), nil
 }
 
 func (o OnionTree) getUnsortedDir() string {
