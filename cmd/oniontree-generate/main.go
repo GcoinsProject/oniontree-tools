@@ -7,6 +7,7 @@ import (
 	"github.com/onionltd/oniontree-tools/pkg/types/service"
 	"os"
 	"text/template"
+	"time"
 )
 
 func exitError(msg string) {
@@ -43,10 +44,12 @@ func main() {
 		Unsorted  map[string]service.Service `json:"unsorted"`
 		Tagged    map[string][]string        `json:"tagged"`
 		Addresses map[string]string          `json:"addresses"`
+		Date      time.Time                  `json:"date"`
 	}{
 		listUnsorted(onionTree, &cfg),
 		listTagged(onionTree),
 		listAddresses(onionTree),
+		time.Now(),
 	}
 
 	if err := template.Must(template.New(*templatePath).
