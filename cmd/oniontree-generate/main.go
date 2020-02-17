@@ -40,9 +40,9 @@ func main() {
 	}
 
 	templateData := struct {
-		Unsorted  map[string]service.Service
-		Tagged    map[string][]string
-		Addresses map[string]string
+		Unsorted  map[string]service.Service `json:"unsorted"`
+		Tagged    map[string][]string        `json:"tagged"`
+		Addresses map[string]string          `json:"addresses"`
 	}{
 		listUnsorted(onionTree, &cfg),
 		listTagged(onionTree),
