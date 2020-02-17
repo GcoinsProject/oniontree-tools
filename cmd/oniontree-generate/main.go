@@ -45,11 +45,13 @@ func main() {
 		Tagged    map[string][]string        `json:"tagged"`
 		Addresses map[string]string          `json:"addresses"`
 		Date      time.Time                  `json:"date"`
+		Hash      string                     `json:"hash"`
 	}{
 		listUnsorted(onionTree, &cfg),
 		listTagged(onionTree),
 		listAddresses(onionTree),
 		time.Now(),
+		getHash(onionTree),
 	}
 
 	if err := template.Must(template.New(*templatePath).
@@ -111,6 +113,14 @@ func listAddresses(onionTree *oniontree.OnionTree) map[string]string {
 		}
 	}
 	return resultMap
+}
+
+func getHash(onionTree *oniontree.OnionTree) string {
+	hash, err := onionTree.Hash()
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", hash)
 }
 
 func modifyServiceData(s *service.Service, cfg *listerConfig) {
